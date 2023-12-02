@@ -3,11 +3,20 @@ import { defu } from "defu";
 import glob from "tiny-glob";
 import { EventEmitter } from "node:events";
 
+export type GlobOptions = {
+  cwd?: string;
+  dot?: boolean;
+  absolute?: boolean;
+  filesOnly?: boolean;
+  flush?: boolean;
+};
+
+export type FilePath = string;
+
 class ContextManager {
   initialConfig: esbuild.BuildOptions = {};
-  contextConfigs: esbuild.BuildOptions[] = [];
-  contexts: esbuild.BuildContext[] = [];
-  queue = [];
+  #contextConfigs: esbuild.BuildOptions[] = [];
+  #contexts: esbuild.BuildContext[] = [];
   #eventBus = new EventEmitter();
 
   constructor(initial: esbuild.BuildOptions) {
@@ -15,10 +24,10 @@ class ContextManager {
   }
 
   config(conf: esbuild.BuildOptions) {
-    this.contextConfigs.push(defu(conf, this.initialConfig));
+    this.#contextConfigs.push(defu(conf, this.initialConfig));
   }
 
-  glob(pattern: string, opts: any) {
+  glob(pattern: string, opts: GlobOptions): Promise<FilePath[]> {
     return glob(pattern, opts);
   }
 
@@ -35,7 +44,7 @@ class ContextManager {
     const eBus = this.#eventBus;
     let cfg;
 
-    while ((cfg = this.contextConfigs.shift())) {
+    while ((cfg = this.#contextConfigs.shift())) {
       try {
         cfg.plugins ||= [];
 
@@ -52,7 +61,7 @@ class ContextManager {
 
         const context = await esbuild.context(defu(cfg, this.initialConfig));
 
-        this.contexts.push(context);
+        this.#contexts.push(context);
       } catch (err) {
         this.#eventBus.emit("error", err);
         break;
@@ -62,14 +71,14 @@ class ContextManager {
 
   async build() {
     await this.#createContext();
-    this.contexts.forEach((x) => x.rebuild());
+    this.#contexts.forEach((x) => x.rebuild());
 
     this.#eventBus.emit("build");
   }
 
   async watch() {
     await this.#createContext();
-    await Promise.all(this.contexts.map((x) => x.watch()));
+    await Promise.all(this.#contexts.map((x) => x.watch()));
   }
 }
 
