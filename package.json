@@ -27,7 +27,8 @@
     "fix": "prettier --write .",
     "next": "bumpp",
     "test": "uvu",
-    "test:ci": "c8 uvu"
+    "test:ci": "c8 uvu",
+    "prepare": "npm run build"
   },
   "prettier": "@barelyhuman/prettier-config",
   "dependencies": {
