@@ -1,0 +1,36 @@
+{
+  "name": "esbuild-multicontext",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.mjs",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.mjs",
+      "require": "./dist/cjs/index.js"
+    },
+    "./cjs": "./dist/esm/index.js",
+    "./esm": "./dist/esm/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsx build.js",
+    "dev": "tsx build.js --dev"
+  },
+  "dependencies": {
+    "defu": "^6.1.3",
+    "esbuild": "^0.19.8",
+    "tiny-glob": "^0.2.9"
+  },
+  "devDependencies": {
+    "@barelyhuman/prettier-config": "^1.1.0",
+    "@types/node": "^20.10.2",
+    "prettier": "^3.1.0",
+    "tsc-prog": "^2.3.0",
+    "tsx": "^4.6.1",
+    "typescript": "^5.3.2"
+  }
+}
