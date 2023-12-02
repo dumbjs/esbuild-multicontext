@@ -1,6 +1,6 @@
 # esbuild-multicontext
 
-Minimal wrapper for esbuild's context API
+Minimal wrapper over esbuild's context API
 
 
 ## What and Why ?
