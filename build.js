@@ -40,6 +40,7 @@ buildContext.on("error", (errors) => {
 
 buildContext.on("build", async () => {
   process.stdout.write("[custom-builder] Built\n");
+  
   await writeFile(
     "./dist/cjs/package.json",
     JSON.stringify({ type: "commonjs" }),

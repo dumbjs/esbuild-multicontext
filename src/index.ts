@@ -71,7 +71,7 @@ class ContextManager {
 
   async build() {
     await this.#createContext();
-    this.#contexts.forEach((x) => x.rebuild());
+    await Promise.all(this.#contexts.map((x) => x.rebuild()));
 
     this.#eventBus.emit("build");
   }
