@@ -4,19 +4,18 @@ import tsc from 'tsc-prog'
 
 const isDev = process.argv.includes('--dev')
 
-const buildContext = createContext({
-  bundle: true,
-})
-
 const common = {
   external: ['tiny-glob', 'defu', 'esbuild'],
   entryPoints: ['./src/index.js'],
   platform: 'node',
   target: 'node14',
   format: 'esm',
+  bundle: true,
 }
 
-buildContext.config({
+const buildContext = createContext()
+
+buildContext.add('esm', {
   ...common,
   outdir: './dist/esm',
   format: 'esm',
@@ -25,7 +24,7 @@ buildContext.config({
   },
 })
 
-buildContext.config({
+buildContext.add('cjs', {
   ...common,
   outdir: './dist/cjs',
   format: 'cjs',
@@ -34,11 +33,24 @@ buildContext.config({
   },
 })
 
-buildContext.on('error', errors => {
-  errors.map(x => process.stdout.write(x.reason.toString() + '\n'))
+buildContext.hook('esm:complete', async () => {
+  process.stdout.write('[custom-builder] ESM Built\n')
 })
 
-buildContext.on('build', async () => {
+buildContext.hook('cjs:complete', async () => {
+  process.stdout.write('[custom-builder] CJS Built\n')
+})
+
+buildContext.hook('cjs:error', async errors => {
+  process.stdout.write('[custom-builder] CJS Error:\n')
+  console.error(errors)
+})
+
+buildContext.hook('error', async error => {
+  console.error(error)
+})
+
+buildContext.hook('complete', async () => {
   process.stdout.write('[custom-builder] Built\n')
 
   await writeFile(
@@ -74,24 +86,5 @@ buildContext.on('build', async () => {
   process.exit(0)
 })
 
-function createChain() {
-  let agg = Promise.resolve()
-  const _chainer = fn => {
-    agg = agg.then(fn)
-  }
-  _chainer.value = async () => {
-    await agg
-    return null
-  }
-  return _chainer
-}
-
-const chain = createChain()
-
-if (isDev) {
-  chain(() => buildContext.watch())
-}
-
-chain(() => buildContext.build())
-
-await chain.value
+if (isDev) await buildContext.watch()
+await buildContext.build()

@@ -1,7 +1,7 @@
 import esbuild from 'esbuild'
 import { defu } from 'defu'
 import glob from 'tiny-glob'
-import { EventEmitter } from 'node:events'
+import { createHook } from './hooks.js'
 
 export type GlobOptions = {
   cwd?: string
@@ -15,29 +15,27 @@ export type FilePath = string
 
 class ContextManager {
   initialConfig: esbuild.BuildOptions = {}
-  #contextConfigs: esbuild.BuildOptions[] = []
+  #contextConfigs: { name: string; config: esbuild.BuildOptions }[] = []
   #contexts: esbuild.BuildContext[] = []
-  #eventBus = new EventEmitter()
+  #eventBus = createHook()
 
   constructor(initial: esbuild.BuildOptions) {
     this.initialConfig = initial
   }
 
-  config(conf: esbuild.BuildOptions) {
-    this.#contextConfigs.push(defu(conf, this.initialConfig))
+  hook(eventName, handler) {
+    return this.#eventBus.hook(eventName, handler)
+  }
+
+  add(name: string, conf: esbuild.BuildOptions) {
+    this.#contextConfigs.push({
+      name,
+      config: defu(conf, this.initialConfig),
+    })
   }
 
   glob(pattern: string, opts: GlobOptions): Promise<FilePath[]> {
     return glob(pattern, opts)
-  }
-
-  on(eventName: 'error' | 'build', listener: (...args: any[]) => void) {
-    this.#eventBus.addListener(eventName, listener)
-    return () => this.#eventBus.removeListener(eventName, listener)
-  }
-
-  offAll(eventName: string) {
-    this.#eventBus.removeAllListeners(eventName)
   }
 
   async #createContext() {
@@ -46,24 +44,17 @@ class ContextManager {
 
     while ((cfg = this.#contextConfigs.shift())) {
       try {
-        cfg.plugins ||= []
+        cfg.config.plugins ||= []
 
-        cfg.plugins.push({
-          name: 'esbuild-multicontext-handler',
-          setup(build) {
-            build.onEnd(result => {
-              eBus.emit(`built-context`, {
-                result,
-              })
-            })
-          },
-        })
+        cfg.config.plugins.push(generateReportingPlugin(eBus, cfg.name))
 
-        const context = await esbuild.context(defu(cfg, this.initialConfig))
+        const context = await esbuild.context(
+          defu(cfg.config, this.initialConfig)
+        )
 
         this.#contexts.push(context)
       } catch (err) {
-        this.#eventBus.emit('error', err)
+        await this.#eventBus.emit(getContextErrorName(cfg.name), [err])
         break
       }
     }
@@ -72,8 +63,7 @@ class ContextManager {
   async build() {
     await this.#createContext()
     await Promise.all(this.#contexts.map(x => x.rebuild()))
-
-    this.#eventBus.emit('build')
+    await this.#eventBus.emit('complete', null)
   }
 
   async watch() {
@@ -84,4 +74,26 @@ class ContextManager {
 
 export function createContext(initial: esbuild.BuildOptions) {
   return new ContextManager(initial)
+}
+
+function generateReportingPlugin(eBus, name): esbuild.Plugin {
+  return {
+    name: 'esbuild-multicontext-handler',
+    setup(build) {
+      build.onEnd(async result => {
+        if (result.errors.length > 0)
+          return await eBus.emit(getContextErrorName(name), result.errors)
+
+        await eBus.emit(getContextCompletionName(name), result)
+      })
+    },
+  }
+}
+
+function getContextCompletionName(name) {
+  return `${name}:complete`
+}
+
+function getContextErrorName(name) {
+  return `${name}:error`
 }
