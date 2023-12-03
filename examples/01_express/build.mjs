@@ -1,15 +1,13 @@
 import { copyFile, writeFile } from 'fs/promises'
 import { createContext } from 'esbuild-multicontext'
 import { nodeExternals } from 'esbuild-plugin-node-externals'
+import { spawn } from 'child_process'
 
 const isDev = process.argv.includes('--dev')
 
-const buildContext = createContext({
-  bundle: true,
-})
+const buildContext = createContext()
 
-// Server
-buildContext.config({
+buildContext.add('server', {
   platform: 'node',
   target: 'node14',
   entryPoints: ['./server/server.js'],
@@ -19,7 +17,7 @@ buildContext.config({
 })
 
 // Client
-buildContext.config({
+buildContext.add('client', {
   platform: 'browser',
   bundle: true,
   entryPoints: ['./client/entry.js'],
@@ -27,11 +25,26 @@ buildContext.config({
   format: 'esm',
 })
 
-buildContext.on('error', errors => {
+let spawnedTask
+
+buildContext.hook('server:complete', () => {
+  if (!isDev) return
+
+  if (spawnedTask) {
+    process.kill(spawnedTask)
+  }
+  const task = spawn('node', ['./dist/server/server.js'], {
+    cwd: process.cwd(),
+    stdio: 'inherit',
+  })
+  spawnedTask = task.pid
+})
+
+buildContext.hook('error', errors => {
   errors.map(x => process.stdout.write(x.reason.toString() + '\n'))
 })
 
-buildContext.on('build', async () => {
+buildContext.hook('complete', async () => {
   process.stdout.write('[custom-builder] Built\n')
 
   // Copy assets after build is complete
