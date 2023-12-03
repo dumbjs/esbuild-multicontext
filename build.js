@@ -34,16 +34,33 @@ buildContext.add('cjs', {
 })
 
 buildContext.hook('esm:complete', async () => {
+  await writeFile(
+    './dist/esm/package.json',
+    JSON.stringify({ type: 'module' }),
+    'utf8'
+  )
+
   process.stdout.write('[custom-builder] ESM Built\n')
 })
 
 buildContext.hook('cjs:complete', async () => {
+  await writeFile(
+    './dist/cjs/package.json',
+    JSON.stringify({ type: 'commonjs' }),
+    'utf8'
+  )
+
   process.stdout.write('[custom-builder] CJS Built\n')
+})
+
+buildContext.hook('esm:error', async errors => {
+  process.stdout.write('[custom-builder] ESM Error:\n')
+  errors.map(x => console.error(x))
 })
 
 buildContext.hook('cjs:error', async errors => {
   process.stdout.write('[custom-builder] CJS Error:\n')
-  console.error(errors)
+  errors.map(x => console.error(x))
 })
 
 buildContext.hook('error', async error => {
@@ -51,20 +68,6 @@ buildContext.hook('error', async error => {
 })
 
 buildContext.hook('complete', async () => {
-  process.stdout.write('[custom-builder] Built\n')
-
-  await writeFile(
-    './dist/cjs/package.json',
-    JSON.stringify({ type: 'commonjs' }),
-    'utf8'
-  )
-
-  await writeFile(
-    './dist/esm/package.json',
-    JSON.stringify({ type: 'module' }),
-    'utf8'
-  )
-
   tsc.build({
     basePath: process.cwd(),
     compilerOptions: {
@@ -80,6 +83,8 @@ buildContext.hook('complete', async () => {
     include: ['src/**/*'],
     exclude: ['**/*.test.ts', '**/*.spec.ts'],
   })
+
+  process.stdout.write('[custom-builder] Done\n')
 
   if (isDev) return
 
