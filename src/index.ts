@@ -1,7 +1,8 @@
 import esbuild from 'esbuild'
 import { defu } from 'defu'
 import glob from 'tiny-glob'
-import { createHook } from './hooks.js'
+import { createHook } from './lib/hooks.js'
+import { batcher } from './lib/promise.js'
 
 export type GlobOptions = {
   cwd?: string
@@ -60,10 +61,14 @@ class ContextManager {
     }
   }
 
-  async build() {
+  async build({ limit = Infinity } = {}) {
     await this.#createContext()
-    await Promise.all(this.#contexts.map(x => x.rebuild()))
-    await this.#eventBus.emit('complete', null)
+    const errors = await batcher(x => x.rebuild(), { limit })(this.#contexts)
+    if (errors.length > 0) {
+      await this.#eventBus.emit('error', errors)
+    } else {
+      await this.#eventBus.emit('complete', null)
+    }
   }
 
   async watch() {
