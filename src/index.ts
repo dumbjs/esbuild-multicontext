@@ -61,7 +61,7 @@ class ContextManager {
     }
   }
 
-  async build({ limit = Infinity } = {}) {
+  async build({ limit = Number.MAX_VALUE } = {}) {
     await this.#createContext()
     const errors = await batcher(x => x.rebuild(), { limit })(this.#contexts)
     if (errors.length > 0) {

@@ -8,7 +8,7 @@ type BatchOptions = {
 export const batcher =
   <T extends any[], K extends keyof T, Item extends T[K]>(
     mapper: (item: Item) => Promise<void>,
-    { limit = Infinity }: BatchOptions
+    { limit = Number.MAX_VALUE }: BatchOptions
   ) =>
   async (collection: T) => {
     const errors: Error[] = []
