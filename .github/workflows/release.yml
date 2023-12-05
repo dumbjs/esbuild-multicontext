@@ -1,4 +1,4 @@
-name: release-beta
+name: release
 
 on:
   push:
@@ -27,6 +27,6 @@ jobs:
 
       - name: Publish
         run: |
-          npm publish --tag beta
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
