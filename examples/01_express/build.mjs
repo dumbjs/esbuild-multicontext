@@ -27,7 +27,12 @@ buildContext.add('client', {
 
 let spawnedTask
 
+buildContext.hook('client:complete', () => {
+  console.log('Client: Built')
+})
+
 buildContext.hook('server:complete', () => {
+  console.log('Server: Built')
   if (!isDev) return
 
   if (spawnedTask) {
@@ -54,24 +59,6 @@ buildContext.hook('complete', async () => {
   process.exit(0)
 })
 
-function createChain() {
-  let agg = Promise.resolve()
-  const _chainer = fn => {
-    agg = agg.then(fn)
-  }
-  _chainer.value = async () => {
-    await agg
-    return null
-  }
-  return _chainer
-}
+if (isDev) await buildContext.watch()
 
-const chain = createChain()
-
-if (isDev) {
-  chain(() => buildContext.watch())
-}
-
-chain(() => buildContext.build())
-
-await chain.value
+await buildContext.build()
