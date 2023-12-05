@@ -14,10 +14,43 @@ instances.
 
 ## Usage
 
-> API Status: `unstable`
+```js
+import { createContext } from 'esbuild-multicontext'
 
-Please use the `build.js` file to get a basic idea of the current API, this will
-change till the library reaches `0.0.1`
+const buildContext = createContext()
+
+// Use the helper glob to find files and directories
+const entries = await buildContext.glob('./src/*.js', {
+  filesOnly: true,
+})
+
+buildContext.add('esm', {
+  entryPoints: entries,
+  outdir: './dist/esm',
+  format: 'esm',
+  outExtension: {
+    '.js': '.mjs',
+  },
+})
+
+buildContext.hook('esm:complete', async () => {
+  // context built completely
+})
+
+buildContext.hook('esm:error', async error => {
+  // context failed with `error`
+})
+
+buildContext.hook('error', async error => {
+  // multi context build failed
+})
+
+// Watch each context and re-build on change
+await buildContext.watch()
+
+// Build each context and notify the respective hooks
+await buildContext.build()
+```
 
 ## License
 
