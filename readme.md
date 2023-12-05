@@ -1,5 +1,7 @@
 # esbuild-multicontext
 
+[![ComVer](https://img.shields.io/badge/ComVer-compliant-brightgreen.svg)](https://github.com/barelyhuman/esbuild-multicontext)
+
 Minimal wrapper over esbuild's context API
 
 ## What and Why ?
