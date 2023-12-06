@@ -1,5 +1,5 @@
 import { writeFile } from 'fs/promises'
-import { createContext } from './src/index.ts'
+import { CONSTANTS, createContext } from './src/index.ts'
 import tsc from 'tsc-prog'
 
 const isDev = process.argv.includes('--dev')
@@ -63,11 +63,11 @@ buildContext.hook('cjs:error', async errors => {
   errors.map(x => console.error(x))
 })
 
-buildContext.hook('error', async error => {
+buildContext.hook(CONSTANTS.BUILD_ERROR, async error => {
   console.error(error)
 })
 
-buildContext.hook('complete', async () => {
+buildContext.hook(CONSTANTS.BUILD_COMPLETE, async () => {
   tsc.build({
     basePath: process.cwd(),
     compilerOptions: {

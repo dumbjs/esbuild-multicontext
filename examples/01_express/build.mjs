@@ -1,7 +1,7 @@
-import { copyFile, writeFile } from 'fs/promises'
-import { createContext } from 'esbuild-multicontext'
-import { nodeExternals } from 'esbuild-plugin-node-externals'
 import { spawn } from 'child_process'
+import { CONSTANTS, createContext } from 'esbuild-multicontext'
+import { nodeExternals } from 'esbuild-plugin-node-externals'
+import { copyFile } from 'fs/promises'
 
 const isDev = process.argv.includes('--dev')
 
@@ -45,11 +45,11 @@ buildContext.hook('server:complete', () => {
   spawnedTask = task.pid
 })
 
-buildContext.hook('error', errors => {
+buildContext.hook(CONSTANTS.ERROR, errors => {
   errors.map(x => process.stdout.write(x.reason.toString() + '\n'))
 })
 
-buildContext.hook('complete', async () => {
+buildContext.hook(CONSTANTS.COMPLETE, async () => {
   process.stdout.write('[custom-builder] Built\n')
 
   // Copy assets after build is complete
