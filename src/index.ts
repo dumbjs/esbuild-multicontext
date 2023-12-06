@@ -64,6 +64,9 @@ class ContextManager {
   }
 
   add(name: string, conf: esbuild.BuildOptions) {
+    if (name === 'ebm') {
+      throw new Error('`ebm` is a reserved name, please use something else')
+    }
     this.#contextConfigs.push({
       name,
       config: defu(conf, this.initialConfig),
