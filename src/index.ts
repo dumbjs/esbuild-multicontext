@@ -28,6 +28,10 @@ class ContextManager {
     return this.#eventBus.hook(eventName, handler)
   }
 
+  getContext(name: string) {
+    return this.#contextConfigs.find(x => x.name == name)
+  }
+
   add(name: string, conf: esbuild.BuildOptions) {
     this.#contextConfigs.push({
       name,
@@ -86,8 +90,9 @@ function generateReportingPlugin(eBus, name): esbuild.Plugin {
     name: 'esbuild-multicontext-handler',
     setup(build) {
       build.onEnd(async result => {
-        if (result.errors.length > 0)
+        if (result.errors.length > 0) {
           return await eBus.emit(getContextErrorName(name), result.errors)
+        }
 
         await eBus.emit(getContextCompletionName(name), result)
       })
