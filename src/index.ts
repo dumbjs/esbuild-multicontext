@@ -28,8 +28,30 @@ class ContextManager {
     return this.#eventBus.hook(eventName, handler)
   }
 
+  getConfig(name: string) {
+    return this.#contextConfigs.find(x => x.name === name)
+  }
+
+  getAllConfigs() {
+    return this.#contextConfigs.slice()
+  }
+
+  /**
+   * returns the raw esbuild context to be used
+   * externally from the multicontext environment
+   *
+   * this will not fire any of the hooks or report rebuilds
+   * please avoid using this unless you wish to manage the context
+   * manually
+   * @param name
+   * @returns
+   */
   getContext(name: string) {
-    return this.#contextConfigs.find(x => x.name == name)
+    const configDefinition = this.#contextConfigs.find(x => x.name == name)
+    if (!configDefinition) {
+      return false
+    }
+    return this.#atomicCreateContext(configDefinition)
   }
 
   add(name: string, conf: esbuild.BuildOptions) {
@@ -41,6 +63,13 @@ class ContextManager {
 
   glob(pattern: string, opts: GlobOptions): Promise<FilePath[]> {
     return glob(pattern, opts)
+  }
+
+  async #atomicCreateContext(config) {
+    let cfg = config
+    cfg.config.plugins ||= []
+    const context = await esbuild.context(defu(cfg, this.initialConfig))
+    return context
   }
 
   async #createContext() {
