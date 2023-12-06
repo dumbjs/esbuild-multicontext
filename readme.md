@@ -17,7 +17,7 @@ instances.
 ## Usage
 
 ```js
-import { createContext } from 'esbuild-multicontext'
+import { createContext, CONSTANTS } from 'esbuild-multicontext'
 
 const buildContext = createContext()
 
@@ -43,8 +43,24 @@ buildContext.hook('esm:error', async error => {
   // context failed with `error`
 })
 
-buildContext.hook('error', async error => {
+buildContext.hook(CONSTANTS.ERROR, async error => {
   // multi context build failed
+})
+
+buildContext.hook(CONSTANTS.BUILD_COMPLETE, async error => {
+  // Overall build complete
+})
+
+buildContext.hook(CONSTANTS.BUILD_ERROR, async error => {
+  // Overall build error
+})
+
+buildContext.hook(CONSTANTS.WATCH_COMPLETE, async error => {
+  // Overall watch complete
+})
+
+buildContext.hook(CONSTANTS.WATCH_ERROR, async error => {
+  // Overall watch error
 })
 
 // Watch each context and re-build on change

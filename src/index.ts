@@ -14,6 +14,15 @@ export type GlobOptions = {
 
 export type FilePath = string
 
+export const CONSTANTS = {
+  COMPLETE: 'ebm:complete',
+  ERROR: 'ebm:error',
+  BUILD_COMPLETE: 'ebm_build:complete',
+  WATCH_COMPLETE: 'ebm_watch:complete',
+  BUILD_ERROR: 'ebm_build:error',
+  WATCH_ERROR: 'ebm_watch:error',
+}
+
 class ContextManager {
   initialConfig: esbuild.BuildOptions = {}
   #contextConfigs: { name: string; config: esbuild.BuildOptions }[] = []
@@ -94,19 +103,48 @@ class ContextManager {
     }
   }
 
+  /**
+   * @param {object} options
+   * @param {number} options.limit
+   *
+   * @description run a certain number of builds at once to avoid heavy usage of memory
+   * esbuild itself is fast so this doesn't take much time but if there's cases where it's hanging up your system,
+   * then use the `limit` option to set an execution window
+   *
+   * example: if limit is 1, one build is run at most at a time
+   * if limit is 3, at any given time 3 builds would be running.
+   *
+   * **Note**: This option makes no sense unless you usecase handles over 10+ context instances
+   */
   async build({ limit = Number.MAX_VALUE } = {}) {
     await this.#createContext()
     const errors = await batcher(x => x.rebuild(), { limit })(this.#contexts)
     if (errors.length > 0) {
-      await this.#eventBus.emit('error', errors)
-    } else {
-      await this.#eventBus.emit('complete', null)
+      return await this.#eventBus.emit(CONSTANTS.BUILD_ERROR, errors)
     }
+    await this.#eventBus.emit(CONSTANTS.BUILD_COMPLETE, null)
   }
 
-  async watch() {
+  /**
+   * @param {object} options
+   * @param {number} options.limit
+   *
+   * @description run a certain number of builds at once to avoid heavy usage of memory
+   * esbuild itself is fast so this doesn't take much time but if there's cases where it's hanging up your system,
+   * then use the `limit` option to set an execution window
+   *
+   * example: if limit is 1, one build is run at most at a time
+   * if limit is 3, at any given time 3 builds would be running.
+   *
+   * **Note**: This option makes no sense unless you usecase handles over 10+ context instances
+   */
+  async watch({ limit = Number.MAX_VALUE } = {}) {
     await this.#createContext()
-    await Promise.all(this.#contexts.map(x => x.watch()))
+    const errors = await batcher(x => x.watch(), { limit })(this.#contexts)
+    if (errors.length > 0) {
+      return await this.#eventBus.emit(CONSTANTS.WATCH_ERROR, errors)
+    }
+    await this.#eventBus.emit(CONSTANTS.WATCH_COMPLETE, null)
   }
 }
 
