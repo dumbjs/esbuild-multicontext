@@ -49,7 +49,7 @@ buildContext.hook(CONSTANTS.ERROR, errors => {
   errors.map(x => process.stdout.write(x.reason.toString() + '\n'))
 })
 
-buildContext.hook(CONSTANTS.COMPLETE, async () => {
+buildContext.hook(CONSTANTS.BUILD_COMPLETE, async () => {
   process.stdout.write('[custom-builder] Built\n')
 
   // Copy assets after build is complete

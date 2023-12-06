@@ -15,7 +15,6 @@ export type GlobOptions = {
 export type FilePath = string
 
 export const CONSTANTS = {
-  COMPLETE: 'ebm:complete',
   ERROR: 'ebm:error',
   BUILD_COMPLETE: 'ebm_build:complete',
   WATCH_COMPLETE: 'ebm_watch:complete',
