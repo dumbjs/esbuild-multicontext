@@ -131,12 +131,12 @@ class ContextManager {
    * @param {object} options
    * @param {number} options.limit
    *
-   * @description run a certain number of builds at once to avoid heavy usage of memory
+   * @description run a certain number of watchers at once to avoid heavy usage of memory
    * esbuild itself is fast so this doesn't take much time but if there's cases where it's hanging up your system,
    * then use the `limit` option to set an execution window
    *
    * example: if limit is 1, one build is run at most at a time
-   * if limit is 3, at any given time 3 builds would be running.
+   * if limit is 3, at any given time 3 watchers would be running.
    *
    * **Note**: This option makes no sense unless you usecase handles over 10+ context instances
    */
@@ -147,6 +147,11 @@ class ContextManager {
       return await this.#eventBus.emit(CONSTANTS.WATCH_ERROR, errors)
     }
     await this.#eventBus.emit(CONSTANTS.WATCH_COMPLETE, null)
+  }
+
+  async dispose() {
+    await this.#createContext()
+    await batcher(x => x.dispose(), { limit: Number.MAX_VALUE })(this.#contexts)
   }
 }
 
