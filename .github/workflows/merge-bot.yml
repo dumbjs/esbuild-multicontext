@@ -1,0 +1,25 @@
+name: Merge Bot
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      npm i
+      npm run build
+      npm test:ci
+
+  automerge:
+    needs: test
+    runs-on: ubuntu-latest
+
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - uses: fastify/github-action-merge-dependabot@v3
