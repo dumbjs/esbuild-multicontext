@@ -33,7 +33,7 @@
   "prettier": "@barelyhuman/prettier-config",
   "dependencies": {
     "defu": "^6.1.3",
-    "esbuild": "^0.19.8",
+    "esbuild": "^0.20.1",
     "tiny-glob": "^0.2.9"
   },
   "devDependencies": {
