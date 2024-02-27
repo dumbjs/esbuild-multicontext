@@ -6,12 +6,21 @@ on:
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
-      npm i
-      npm run build
-      npm test:ci
+      - uses: actions/checkout@v1
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 18
 
+      - name: npm install, build and test
+        run: |
+          npm install
+          npm run build --if-present
+          npm test:ci
+    
   automerge:
     needs: test
     runs-on: ubuntu-latest
