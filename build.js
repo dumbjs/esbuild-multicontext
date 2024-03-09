@@ -5,8 +5,8 @@ import tsc from 'tsc-prog'
 const isDev = process.argv.includes('--dev')
 
 const common = {
-  external: ['tiny-glob', 'defu', 'esbuild'],
-  entryPoints: ['./src/index.js'],
+  external: ['tiny-glob', 'defu', 'esbuild', 'chokidar'],
+  entryPoints: ['./src/index.js', './src/watcher.js'],
   platform: 'node',
   target: 'node14',
   format: 'esm',
