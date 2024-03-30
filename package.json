@@ -1,7 +1,7 @@
 {
   "name": "esbuild-multicontext",
   "description": "Minimal wrapper over esbuild's context API",
-  "version": "0.9.0-beta.0",
+  "version": "0.9.0-beta.1",
   "license": "MIT",
   "type": "module",
   "exports": {
