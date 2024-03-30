@@ -4,6 +4,8 @@ import glob from 'tiny-glob'
 import { createHook } from './hooks.js'
 import { batcher } from './promise.js'
 
+const NAME = Symbol('esb_name')
+
 type FilePath = string
 
 type GlobOptions = {
@@ -97,6 +99,7 @@ export class ContextManager {
           defu(cfg.config, this.initialConfig)
         )
 
+        context[NAME] = cfg.name
         this.#contexts.push(context)
       } catch (err) {
         await this.#eventBus.emit(getContextErrorName(cfg.name), [err])
@@ -107,6 +110,7 @@ export class ContextManager {
 
   /**
    * @param {object} options
+   * @param {string} options.name - experimental
    * @param {number} options.limit
    *
    * @description run a certain number of builds at once to avoid heavy usage of memory
@@ -118,13 +122,18 @@ export class ContextManager {
    *
    * **Note**: This option makes no sense unless you usecase handles over 10+ context instances
    */
-  async build({ limit = Number.MAX_VALUE } = {}) {
+  async build({ name = '', limit = Number.MAX_VALUE } = {}) {
     await this.#createContext()
-    const errors = await batcher(x => x.rebuild(), { limit })(this.#contexts)
-    if (errors.length > 0) {
-      return await this.#eventBus.emit(CONSTANTS.BUILD_ERROR, errors)
+    if (name && name.length > 0) {
+      const baseConfig = this.#contexts.find(d => d[NAME] === name)
+      await baseConfig?.rebuild()
+    } else {
+      const errors = await batcher(x => x.rebuild(), { limit })(this.#contexts)
+      if (errors.length > 0) {
+        return await this.#eventBus.emit(CONSTANTS.BUILD_ERROR, errors)
+      }
+      await this.#eventBus.emit(CONSTANTS.BUILD_COMPLETE, null)
     }
-    await this.#eventBus.emit(CONSTANTS.BUILD_COMPLETE, null)
   }
 
   /**
