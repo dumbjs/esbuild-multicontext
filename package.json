@@ -6,22 +6,28 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
+      "types": {
+        "import":"./dist/esm/index.d.mts",
+        "require":"./dist/cjs/index.d.cts"
+      },
       "import": "./dist/esm/index.mjs",
       "require": "./dist/cjs/index.js"
     },
     "./watcher": {
-      "types": "./dist/types/watcher.d.ts",
+      "types": {
+        "import":"./dist/esm/watcher.d.mts",
+        "require":"./dist/cjs/watcher.d.cts"
+      },
       "import": "./dist/esm/watcher.mjs",
       "require": "./dist/cjs/watcher.js"
     },
-    "./cjs": "./dist/esm/index.js",
+    "./cjs": "./dist/cjs/index.js",
     "./esm": "./dist/esm/index.mjs",
     "./package.json": "./package.json"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.mjs",
-  "types": "./dist/types/index.d.ts",
+  "types": "./dist/cjs/index.d.cts",
   "files": [
     "dist",
     "src"

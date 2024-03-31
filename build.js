@@ -1,6 +1,9 @@
 import { writeFile } from 'fs/promises'
+import fs from 'node:fs'
+import glob from 'tiny-glob'
 import { CONSTANTS, createContext } from './src/index.ts'
 import tsc from 'tsc-prog'
+import { join } from 'path'
 
 const isDev = process.argv.includes('--dev')
 
@@ -72,7 +75,7 @@ buildContext.hook(CONSTANTS.BUILD_COMPLETE, async () => {
     basePath: process.cwd(),
     compilerOptions: {
       rootDir: 'src',
-      outDir: './dist/types',
+      outDir: './dist/esm',
       declaration: true,
       moduleResolution: 'nodenext',
       target: 'esnext',
@@ -84,12 +87,64 @@ buildContext.hook(CONSTANTS.BUILD_COMPLETE, async () => {
     exclude: ['**/*.test.ts', '**/*.spec.ts'],
   })
 
+  tsc.build({
+    basePath: process.cwd(),
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: './dist/cjs',
+      declaration: true,
+      moduleResolution: 'nodenext',
+      target: 'esnext',
+      module: 'NodeNext',
+      emitDeclarationOnly: true,
+      skipLibCheck: true,
+    },
+    include: ['src/**/*'],
+    exclude: ['**/*.test.ts', '**/*.spec.ts'],
+  })
+  await typeGen()
+
   process.stdout.write('[custom-builder] Done\n')
 
   if (isDev) return
 
   process.exit(0)
 })
+
+async function typeGen() {
+  const typeFolders = [
+    {
+      type: 'cjs',
+      folder: './dist/cjs',
+    },
+    {
+      type: 'esm',
+      folder: './dist/esm',
+    },
+  ]
+  for (let tfolder of typeFolders) {
+    const filesToRename = await glob('**/*.d.ts', {
+      cwd: tfolder.folder,
+      filesOnly: true,
+    })
+    let sourceAndDist = filesToRename.map(d => {
+      const src = join(tfolder.folder, d)
+      const dist = join(
+        tfolder.folder,
+        d.replace(/\.d\.ts$/, tfolder.type === 'cjs' ? '.d.cts' : '.d.mts')
+      )
+      return {
+        src,
+        dist,
+      }
+    })
+
+    for (let { src, dist } of sourceAndDist) {
+      await fs.promises.cp(src, dist, { recursive: true })
+      await fs.promises.rm(src)
+    }
+  }
+}
 
 if (isDev) await buildContext.watch()
 await buildContext.build()
