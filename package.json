@@ -1,22 +1,22 @@
 {
   "name": "esbuild-multicontext",
   "description": "Minimal wrapper over esbuild's context API",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
       "types": {
-        "import":"./dist/esm/index.d.mts",
-        "require":"./dist/cjs/index.d.cts"
+        "import": "./dist/esm/index.d.mts",
+        "require": "./dist/cjs/index.d.cts"
       },
       "import": "./dist/esm/index.mjs",
       "require": "./dist/cjs/index.js"
     },
     "./watcher": {
       "types": {
-        "import":"./dist/esm/watcher.d.mts",
-        "require":"./dist/cjs/watcher.d.cts"
+        "import": "./dist/esm/watcher.d.mts",
+        "require": "./dist/cjs/watcher.d.cts"
       },
       "import": "./dist/esm/watcher.mjs",
       "require": "./dist/cjs/watcher.js"
