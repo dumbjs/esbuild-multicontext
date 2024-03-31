@@ -1,8 +1,7 @@
 import chokidar from 'chokidar'
-import type { ContextManager } from './lib/ContextManager.js'
 import { existsSync } from 'node:fs'
-import glob from 'tiny-glob'
 import path from 'node:path'
+import glob from 'tiny-glob'
 
 export type WatchEvent = {
   type: string
@@ -38,12 +37,15 @@ export const createContextWatcher = (context: ContextRebuilder) => {
       cb()
     }
   }
+  
+  const builder = () => context.build.bind(context)
+  
   return (globPattern, { root, onEvent, onBuild }: Options = { root: '.' }) => {
     syncify(globPattern, root, () => {
       watchers.forEach(w => {
         w.addListener('all', (type, file) => {
           if (!onEvent) {
-            return forcePromise(context.build).then(() => {
+            return forcePromise(builder).then(() => {
               onBuild?.()
             })
           }
@@ -53,7 +55,7 @@ export const createContextWatcher = (context: ContextRebuilder) => {
           })
 
           if (!build) return
-          return forcePromise(context.build).then(() => {
+          return forcePromise(builder).then(() => {
             onBuild?.()
           })
         })
