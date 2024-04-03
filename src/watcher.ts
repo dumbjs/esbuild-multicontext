@@ -20,7 +20,7 @@ export interface ContextRebuilder {
 
 export const createContextWatcher = (context: ContextRebuilder) => {
   const watchers: chokidar.FSWatcher[] = []
-  const syncify = (pattern, root, cb) => {
+  const syncify = (pattern: string, root: string, cb: () => void) => {
     const _path = path.join(root, pattern)
     if (!existsSync(_path)) {
       glob(pattern, {
@@ -37,11 +37,14 @@ export const createContextWatcher = (context: ContextRebuilder) => {
       cb()
     }
   }
-  
+
   const builder = () => context.build.bind(context)
-  
-  return (globPattern, { root, onEvent, onBuild }: Options = { root: '.' }) => {
-    syncify(globPattern, root, () => {
+
+  return (
+    globPattern: string,
+    { root, onEvent, onBuild }: Options = { root: '.' }
+  ) => {
+    syncify(globPattern, root ?? '.', () => {
       watchers.forEach(w => {
         w.addListener('all', (type, file) => {
           if (!onEvent) {
@@ -64,7 +67,7 @@ export const createContextWatcher = (context: ContextRebuilder) => {
   }
 }
 
-async function forcePromise(fn) {
+async function forcePromise<T, G>(fn: (...any: T[]) => G) {
   const inst = fn()
   return inst
 }
