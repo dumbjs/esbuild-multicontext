@@ -28,144 +28,84 @@
  * @module
  */
 
-import { CONSTANTS, createContext } from './src/index.ts'
+import { createContainer } from './src/index.ts'
+import { analyzeMetafile } from 'esbuild'
 import fs from 'node:fs'
 import path, { basename, dirname, join } from 'node:path'
 import { rollup } from 'rollup'
 import { dts } from 'rollup-plugin-dts'
 import ts from 'typescript'
+import k from 'kleur'
+const ctxContainer = createContainer()
 
-await defineBuild({
-  input: ['src/index.ts', 'src/watcher.ts'],
-  tsconfig: './tsconfig.json',
-  outdir: 'dist',
-  tmpDir: '.tmp-build',
-  dtsInDev: true,
-  isDev: process.argv.includes('--dev'),
-  esbuild: {
-    platform: 'node',
-    external: ['tiny-glob', 'defu', 'esbuild', 'chokidar'],
+ctxContainer.createContext('esm', {
+  entryPoints: ['src/index.ts'],
+  format: 'esm',
+  bundle: true,
+  platform: 'node',
+  metafile: true,
+  logLevel: 'info',
+  external: ['esbuild', 'chokidar'],
+  outExtension: {
+    '.js': '.mjs',
   },
-}).build()
+  outdir: './dist/esm',
+})
 
-/**
- * @param {object} options
- * @param {string} options.input
- * @param {string} options.tsconfig
- * @param {string} options.outdir
- * @param {string} options.tmpDir
- * @param {boolean} options.dtsInDev
- * @param {boolean} options.isDev
- * @param {import("esbuild").BuildOptions} options.esbuild
- * @returns
- */
-function defineBuild(options) {
-  return {
-    ...options,
-    build: async () => {
-      process.on('SIGINT', function () {
-        console.log('Cleaning Up')
-        if (fs.existsSync(options.tmpDir)) {
-          fs.rmSync(options.tmpDir, { recursive: true, force: true })
-        }
-        process.exit()
-      })
+ctxContainer.createContext('cjs', {
+  entryPoints: ['src/index.ts'],
+  format: 'cjs',
+  bundle: true,
+  metafile: true,
+  external: ['esbuild', 'chokidar'],
+  platform: 'node',
+  logLevel: 'info',
+  outExtension: {
+    '.js': '.cjs',
+  },
+  outdir: './dist/cjs',
+})
+const tmpDir = './.tmp-build'
 
-      const ctx = await bundleCode({
-        watch: true,
-        buildConfig: options,
-        onRebuild: async () => {
-          if (options.dtsInDev) {
-            console.log('Generating Type Bundle')
-            generateTypes({ buildConfig: options })
-            await bundleTypes({ buildConfig: options })
-          }
-        },
-      })
-      if (!options.isDev) {
-        console.log('Generating Type Bundle')
-        generateTypes({ buildConfig: options })
-        await bundleTypes({ buildConfig: options })
-        fs.rmSync(options.tmpDir, { recursive: true, force: true })
+if (process.argv.slice(2).includes('--dev')) {
+  await ctxContainer.dev({
+    dirs: ['./src'],
+    async onBuild(result, triggeredBy) {
+      if (!triggeredBy) {
+        console.log(k.cyan('Initial Build'))
+      } else {
+        console.log(`${triggeredBy.eventLabel}: ${k.cyan(triggeredBy.file)}`)
+        console.log(k.dim(`Building...`))
       }
-
-      if (!options.isDev) {
-        await ctx.dispose()
+      for (let ctxName in result) {
+        console.log(`Building context ${k.cyan(ctxName)}`)
+        console.log(k.dim(await analyzeMetafile(result[ctxName].metafile)))
       }
     },
+  })
+} else {
+  const result = await ctxContainer.build()
+  for (let ctxName in result) {
+    console.log(`Building context ${k.cyan(ctxName)}`)
+    console.log(k.dim(await analyzeMetafile(result[ctxName].metafile)))
   }
-}
-
-async function bundleCode({
-  watch = false,
-  buildConfig,
-  onRebuild = () => {},
-} = {}) {
-  const buildCtx = createContext()
-  buildCtx.add('cjs', {
-    ...buildConfig.esbuild,
-    entryPoints: [].concat(buildConfig.input),
-    format: 'cjs',
-    bundle: true,
-    outExtension: {
-      '.js': '.cjs',
+  generateTypes({
+    buildConfig: {
+      input: ['src/index.ts'],
+      tsconfig: './tsconfig.json',
+      tmpDir: tmpDir,
+      outdir: './dist',
     },
-    outdir: join(buildConfig.outdir, 'cjs'),
   })
-  buildCtx.add('esm', {
-    ...buildConfig.esbuild,
-    entryPoints: [].concat(buildConfig.input),
-    format: 'esm',
-    bundle: true,
-    outExtension: {
-      '.js': '.mjs',
+  await bundleTypes({
+    buildConfig: {
+      input: ['src/index.ts'],
+      tsconfig: './tsconfig.json',
+      tmpDir: tmpDir,
+      outdir: './dist',
     },
-    outdir: join(buildConfig.outdir, 'esm'),
   })
-
-  const debouncedRebuild = (fn => {
-    let handle
-    return (...args) => {
-      if (handle) clearTimeout(handle)
-      handle = setTimeout(() => {
-        fn(...args)
-      }, 500)
-    }
-  })(onRebuild)
-
-  buildCtx.hook('esm:complete', () => {
-    process.stdout.write('[custom-builder] ESM Built\n')
-    debouncedRebuild()
-  })
-
-  buildCtx.hook('cjs:complete', () => {
-    process.stdout.write('[custom-builder] CJS Built\n')
-    debouncedRebuild()
-  })
-
-  buildCtx.hook('esm:error', async errors => {
-    process.stdout.write('[custom-builder] ESM Error:\n')
-    errors.map(x => console.error(x))
-  })
-
-  buildCtx.hook('cjs:error', async errors => {
-    process.stdout.write('[custom-builder] CJS Error:\n')
-    errors.map(x => console.error(x))
-  })
-
-  buildCtx.hook(CONSTANTS.BUILD_COMPLETE, () => {
-    console.log('Bundled')
-  })
-
-  buildCtx.hook(CONSTANTS.ERROR, errors => {
-    console.error(errors)
-  })
-
-  if (watch) {
-    await buildCtx.watch()
-  }
-  await buildCtx.build()
-  return buildCtx
+  fs.rmSync(tmpDir, { recursive: true })
 }
 
 function generateTypes({ buildConfig } = {}) {

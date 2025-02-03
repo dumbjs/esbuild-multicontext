@@ -18,6 +18,9 @@ export interface ContextRebuilder {
   build(...args: unknown[]): unknown | Promise<unknown>
 }
 
+/**
+ * @deprecated use `createContainer` API handles watching internally
+ */
 export const createContextWatcher = (context: ContextRebuilder) => {
   const watchers: chokidar.FSWatcher[] = []
   const syncify = (pattern, root, cb) => {
@@ -37,9 +40,9 @@ export const createContextWatcher = (context: ContextRebuilder) => {
       cb()
     }
   }
-  
+
   const builder = () => context.build.bind(context)
-  
+
   return (globPattern, { root, onEvent, onBuild }: Options = { root: '.' }) => {
     syncify(globPattern, root, () => {
       watchers.forEach(w => {
