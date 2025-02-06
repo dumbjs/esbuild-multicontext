@@ -25,7 +25,7 @@ jobs:
       - name: Compile
         run: npm run build
 
-      - name: Publish
+      - name: Publish Beta
         run: |
           npm publish --tag beta
         env:
