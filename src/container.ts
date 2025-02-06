@@ -1,4 +1,3 @@
-import { context } from 'esbuild'
 import esbuild from 'esbuild'
 import chokidar, { ChokidarOptions } from 'chokidar'
 
@@ -26,7 +25,7 @@ export type DevOptions = {
 export class Container {
   private configs: Record<string, esbuild.BuildOptions> = {}
 
-  constructor() {}
+  constructor(private builder: typeof esbuild) { }
 
   createContext(name: string, config: esbuild.BuildOptions) {
     this.configs[name] = config
@@ -39,7 +38,7 @@ export class Container {
     }>[] = []
     for (let contextKey in this.configs) {
       pendingContextCreation.push(
-        context(this.configs[contextKey]).then(d => ({
+        this.builder.context(this.configs[contextKey]).then(d => ({
           name: contextKey,
           ctx: d,
         }))
@@ -75,11 +74,11 @@ export class Container {
       dirs = ['.'],
       ignored = () => false,
       watchOptions,
-      onBuild = () => {},
+      onBuild = () => { },
     }: DevOptions = {
-      dirs: ['.'],
-      ignored: () => false,
-    }
+        dirs: ['.'],
+        ignored: () => false,
+      }
   ) {
     const buildAndNotify = createBuildAndNotify(onBuild)
     const shouldRebuild = watchOptions?.shouldRebuild ?? (() => true)

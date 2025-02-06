@@ -14,5 +14,5 @@ export function createContext(initial: esbuild.BuildOptions) {
 }
 
 export function createContainer() {
-  return new Container()
+  return new Container(esbuild)
 }
