@@ -36,7 +36,10 @@ import { rollup } from 'rollup'
 import { dts } from 'rollup-plugin-dts'
 import ts from 'typescript'
 import k from 'kleur'
+import defu from 'defu'
 const ctxContainer = createContainer()
+
+const external = ['esbuild', 'chokidar', 'tiny-glob']
 
 ctxContainer.createContext('esm', {
   entryPoints: ['src/index.ts'],
@@ -45,7 +48,7 @@ ctxContainer.createContext('esm', {
   platform: 'node',
   metafile: true,
   logLevel: 'info',
-  external: ['esbuild', 'chokidar'],
+  external,
   outExtension: {
     '.js': '.mjs',
   },
@@ -57,7 +60,7 @@ ctxContainer.createContext('cjs', {
   format: 'cjs',
   bundle: true,
   metafile: true,
-  external: ['esbuild', 'chokidar'],
+  external,
   platform: 'node',
   logLevel: 'info',
   outExtension: {
@@ -134,7 +137,10 @@ function generateTypes({ buildConfig } = {}) {
   }
 
   if (tsconfigExists) {
-    tsconfigRaw = JSON.parse(fs.readFileSync(buildConfig.tsconfig, 'utf-8'))
+    tsconfigRaw = defu(
+      JSON.parse(fs.readFileSync(buildConfig.tsconfig, 'utf-8')),
+      tsconfigRaw
+    )
   }
 
   const host = ts.createCompilerHost(ts.getDefaultCompilerOptions())
