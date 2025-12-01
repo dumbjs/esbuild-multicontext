@@ -44,7 +44,7 @@
   "prettier": "@barelyhuman/prettier-config",
   "dependencies": {
     "@types/sinon": "^21.0.0",
-    "chokidar": "^4.0.0",
+    "chokidar": "^5.0.0",
     "defu": "^6.1.3",
     "esbuild": "^0.27.0",
     "sinon": "^21.0.0",
