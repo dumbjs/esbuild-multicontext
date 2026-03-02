@@ -54,7 +54,7 @@
     "@barelyhuman/prettier-config": "^2.0.2",
     "@types/node": "^25.0.2",
     "bumpp": "^10.3.2",
-    "c8": "^10.1.3",
+    "c8": "^11.0.0",
     "kleur": "^4.1.5",
     "prettier": "^3.7.4",
     "rollup": "^4.53.3",
