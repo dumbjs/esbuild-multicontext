@@ -47,7 +47,7 @@
     "chokidar": "^5.0.0",
     "defu": "^6.1.4",
     "esbuild": "^0.28.0",
-    "sinon": "^21.0.0",
+    "sinon": "^22.0.0",
     "tiny-glob": "^0.2.9"
   },
   "devDependencies": {
