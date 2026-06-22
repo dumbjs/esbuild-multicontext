@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@barelyhuman/prettier-config": "^2.0.2",
-    "@types/node": "^25.0.2",
+    "@types/node": "^26.0.0",
     "bumpp": "^11.0.1",
     "c8": "^11.0.0",
     "kleur": "^4.1.5",
